@@ -34,14 +34,154 @@ Ketua RT {{rt}}
 function templates(){return settings().templates||[]}
 function letters(){let ts=templates();return `<div class="panel"><h2>Surat Berdasarkan Template Tersimpan</h2><p class="muted">Jenis surat mengikuti nama template yang telah diunggah dan disimpan. Pilih template, isi data warga, lalu unduh surat. Tidak ada daftar jenis surat terpisah.</p>${!ts.length?'<p class="notice">Belum ada template. Unggah dan simpan template di bagian Kelola Template Surat terlebih dahulu.</p>':''}<form id="letterForm"><div class="field"><label>Jenis Surat / Template Tersimpan</label><select id="letterTemplate" name="template" required><option value="">— Pilih template surat —</option>${ts.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select></div>${fields([['citizen','Nama Warga (sesuai Data Warga)'],['purpose','Keperluan','textarea'],['date','Tanggal','date']])}<button class="btn" ${!ts.length?'disabled':''}>Buat & Unduh Surat (.doc)</button></form><p class="muted">Variabel: {{nama}}, {{nik}}, {{alamat}}, {{keperluan}}, {{tanggal}}, {{rt}}, {{rw}}, {{desa}}, {{kecamatan}}, {{kabupaten}}, {{ketua}}, {{jenis}}. Kop tersimpan otomatis digunakan.</p></div><div class="panel"><h2>Kelola Template Surat</h2><p class="muted">Upload template .txt atau .html, beri nama jenis surat, lalu simpan. Template tetap tersedia setelah aplikasi ditutup, dapat diedit, dihapus, dan ikut dalam backup. Untuk file Word .docx, salin isi surat ke editor terlebih dahulu.</p><form id="templateForm"><input type="hidden" id="templateId"><div class="field"><label>Upload File Template (.txt / .html)</label><input id="templateFile" type="file" accept=".txt,.html,.htm,text/plain,text/html"></div><div class="field"><label>Nama Jenis Surat (otomatis dari nama file, bisa diubah)</label><input id="templateName" required placeholder="Contoh: Surat Keterangan Domisili"></div><div class="field"><label>Isi Template</label><textarea id="templateBody" required rows="12" style="min-height:260px" placeholder="Unggah file atau ketik isi surat">${esc(DEFAULT_TEMPLATE)}</textarea></div><button class="btn" type="submit">Simpan Template Permanen</button><button class="btn alt" id="templateReset" type="button">Tambah Template Baru</button></form><div class="scroll"><table><thead><tr><th>Jenis Surat Tersimpan</th><th>Aksi</th></tr></thead><tbody>${ts.map(t=>`<tr><td>${esc(t.name)}</td><td><button class="btn alt" data-template-edit="${esc(t.id)}">Edit</button><button class="btn danger" data-template-delete="${esc(t.id)}">Hapus</button></td></tr>`).join('')||'<tr><td colspan="2">Belum ada template tersimpan.</td></tr>'}</tbody></table></div></div>`+rows('letters',[['date','Tanggal'],['kind','Jenis'],['citizen','Warga']])}
 function fillTemplate(t,vals){return t.replace(/\{\{\s*([a-zA-Z]+)\s*\}\}/g,(m,k)=>Object.hasOwn(vals,k.toLowerCase())?String(vals[k.toLowerCase()]??''):m)}
-function configuration(){let s=settings();return `<div class="panel"><h2>Identitas RT & Logo</h2><form id="settingsForm">${fields([['rt','Nomor RT'],['rw','Nomor RW'],['name','Nama di samping logo (opsional)'],['village','Desa / Gampong'],['district','Kecamatan'],['city','Kabupaten / Kota'],['province','Provinsi'],['chair','Nama Ketua RT'],['address','Alamat sekretariat','textarea'],['logo','Upload logo RT','file'],['letterhead','Upload gambar kop surat','file']],s)}<label><input type="checkbox" name="showName" ${s.showName!==false?'checked':''}> Tampilkan nama di samping logo</label><p>${s.logo?`<img class="preview" src="${s.logo}" alt="Logo tersimpan">`:''}</p>${s.letterhead?`<p>Pratinjau kop surat:</p><img class="preview" src="${s.letterhead}" alt="Kop surat">`:''}<p><button class="btn">Simpan Identitas RT</button></p></form></div><div id="googleDriveSyncPanel" class="panel"><h2>Sinkronisasi Google Drive</h2><p class="muted">Hubungkan akun Google RT yang sama pada maksimal 3 perangkat. Foto disimpan dalam kualitas asli tanpa kompresi. Sinkronisasi memerlukan internet dan konfigurasi OAuth oleh penjual.</p><div id="driveSyncStatus" class="notice">Belum terhubung.</div><div class="actions"><button class="btn" id="driveConnect" type="button">Hubungkan Google</button><button class="btn alt" id="driveSyncNow" type="button">Sinkronkan Sekarang</button><button class="btn alt" id="driveDownload" type="button">Unduh Salinan Data</button></div><p class="muted">Ketiga perangkat dapat mengedit data yang berbeda. Bila dua perangkat mengedit catatan yang sama sebelum sinkronisasi, aplikasi menghentikan penggabungan agar tidak menimpa perubahan. Google Drive bukan database transaksi real-time.</p></div><div class="panel"><h2>Backup & Pulihkan Data</h2><p class="muted">Backup JSON mencakup dokumen dan foto. File dapat berukuran besar. Simpan di lokasi aman karena memuat data pribadi.</p><button id="backup" class="btn">Unduh Backup Seluruh Data</button><div class="field"><label>Impor file backup (.json)</label><input type="file" id="restore" accept=".json,application/json"></div><p class="notice">Peringatan: pemulihan menggantikan data lokal. Backup saat ini tidak terenkripsi; jangan dibagikan ke pihak lain.</p></div>`}
+function configuration(){let s=settings();return `<div class="panel"><h2>Identitas RT & Logo</h2><form id="settingsForm">${fields([['rt','Nomor RT'],['rw','Nomor RW'],['name','Nama di samping logo (opsional)'],['village','Desa / Gampong'],['district','Kecamatan'],['city','Kabupaten / Kota'],['province','Provinsi'],['chair','Nama Ketua RT'],['address','Alamat sekretariat','textarea'],['logo','Upload logo RT','file'],['letterhead','Upload gambar kop surat','file']],s)}<label><input type="checkbox" name="showName" ${s.showName!==false?'checked':''}> Tampilkan nama di samping logo</label><p>${s.logo?`<img class="preview" src="${s.logo}" alt="Logo tersimpan">`:''}</p>${s.letterhead?`<p>Pratinjau kop surat:</p><img class="preview" src="${s.letterhead}" alt="Kop surat">`:''}<p><button class="btn">Simpan Identitas RT</button></p></form></div><div id="rtGasSyncPanel" class="panel"><h2>Sinkronisasi RT SMART — Google Apps Script</h2><p class="muted">Sinkronisasi data administrasi ke Google Drive milik penjual melalui Web App. Maksimal 3 perangkat per kode lisensi. Sinkronisasi menggunakan pilihan arah; data lokal dan data online tidak digabung otomatis.</p><div class="field"><label for="gasLicenseCode">Kode lisensi RT SMART</label><input id="gasLicenseCode" autocomplete="off" placeholder="RTSP-XXXX-XXXX-XXXX"></div><div id="gasSyncStatus" class="notice">Masukkan kode lisensi, lalu pilih Daftarkan Perangkat.</div><div class="actions"><button class="btn" id="gasRegister" type="button">Daftarkan Perangkat</button><button class="btn alt" id="gasPull" type="button">Ambil Data Online</button><button class="btn alt" id="gasPush" type="button">Kirim Data Lokal</button></div><p class="muted">Sebelum data online diganti, aplikasi meminta konfirmasi. Sebelum data lokal diganti, aplikasi otomatis mengunduh backup JSON. Simpan backup di tempat aman karena berisi data pribadi. Sinkronisasi foto dan lampiran dibatasi ukuran permintaan Apps Script.</p></div><div class="panel"><h2>Backup & Pulihkan Data</h2><p class="muted">Backup JSON mencakup dokumen dan foto. File dapat berukuran besar. Simpan di lokasi aman karena memuat data pribadi.</p><button id="backup" class="btn">Unduh Backup Seluruh Data</button><div class="field"><label>Impor file backup (.json)</label><input type="file" id="restore" accept=".json,application/json"></div><p class="notice">Peringatan: pemulihan menggantikan data lokal. Backup saat ini tidak terenkripsi; jangan dibagikan ke pihak lain.</p></div>`}
 function publication(){let activated=!!localStorage.getItem('rt-license-code'),link=localStorage.getItem('rt-public-link')||'';return `<div class="panel"><h2>Dashboard Warga • RT SMART Premium</h2><p class="muted">Publikasikan saldo kas, jumlah warga/KK, dan pengumuman. NIK, KTP, KK, alamat pribadi dan arsip tidak dikirim.</p>${activated?`<p class="notice ok">✓ Lisensi aktif pada perangkat ini (maksimal 3 perangkat per kode). Publikasi tanpa pengaturan server.</p><button id="publish" class="btn">☁ Publikasikan Dashboard</button><button id="copyPublic" class="btn alt" ${link?'':'disabled'}>Salin Link Warga</button><p id="publishStatus" class="muted"></p><div id="publicLink">${link?`<a target="_blank" rel="noopener" href="${esc(link)}">${esc(link)}</a>`:''}</div>`:`<p class="notice">Aktivasi satu kali menggunakan kode yang diberikan penjual.</p><div class="field"><label>Kode aktivasi lifetime</label><input id="licenseCode" autocomplete="off" placeholder="RTSP-XXXX-XXXX-XXXX"></div><button id="activateLicense" class="btn">Aktifkan Aplikasi</button><p id="publishStatus" class="muted"></p>`}</div>`}
-function bindSection(){document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{section=b.dataset.go;editId=null;render()});document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{editId=b.dataset.edit;render();scrollTo(0,0)});document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{await remove(({ 'Data Warga':'residents','Data Keluarga':'families','Kas RT':'cash',Pengumuman:'announcements',Arsip:'archives',Surat:'letters'})[section],b.dataset.del)});if($('cancelEdit'))$('cancelEdit').onclick=()=>{editId=null;render()};if($('entryForm'))$('entryForm').onsubmit=async e=>{e.preventDefault();try{let s=({'Data Warga':'residents','Data Keluarga':'families','Kas RT':'cash',Pengumuman:'announcements',Arsip:'archives'})[section];let fd=new FormData(e.target),obj=state[s].find(x=>x.id===fd.get('id'))||{id:uid()};for(let [k,v] of fd)if(k!=='id'){if(v instanceof File){if(v.size)obj[k]=await fileData(v)}else obj[k]=v}if(s==='cash')obj.amount=num(obj.amount);if(s==='residents'&&obj.nik&&state.residents.some(x=>x.id!==obj.id&&x.nik===obj.nik))throw Error('NIK sudah terdaftar');if(s==='families'&&obj.number&&state.families.some(x=>x.id!==obj.id&&x.number===obj.number))throw Error('Nomor KK sudah terdaftar');await save(s,obj);editId=null}catch(err){alert(err.message)}};if($('settingsForm'))$('settingsForm').onsubmit=async e=>{e.preventDefault();try{let fd=new FormData(e.target),s={...settings()};for(let [k,v] of fd){if(v instanceof File){if(v.size){if(!v.type.startsWith('image/'))throw Error('Logo dan kop harus berupa gambar');s[k]=await fileData(v)}}else s[k]=v}s.showName=e.target.elements.showName.checked;await save('settings',s)}catch(err){alert(err.message)}};if($('backup'))$('backup').onclick=()=>download('rt-smart-backup-'+today()+'.json',new Blob([JSON.stringify({version:3,created:new Date().toISOString(),data:state})],{type:'application/json'}));if($('restore'))$('restore').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;let v=JSON.parse(await f.text());if(!v.data||!STORE.every(s=>Array.isArray(v.data[s])))throw Error('Format backup tidak sesuai');if(!confirm('GANTI semua data lokal dengan backup ini?'))return;for(let s of STORE){await new Promise((res,rej)=>{let t=db.transaction(s,'readwrite');t.objectStore(s).clear();for(let obj of v.data[s])t.objectStore(s).put(obj);t.oncomplete=res;t.onerror=()=>rej(t.error)})}window.rtDriveDirty?.();await refresh();say('Data berhasil dipulihkan')}catch(err){alert('Gagal restore: '+err.message)}};if($('templateFile'))$('templateFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;if(f.size>500000)return alert('File template terlalu besar (maksimal 500 KB)');if(!/\.(txt|html|htm)$/i.test(f.name))return alert('Gunakan file .txt atau .html');let body=await f.text();if(/\.html?$/i.test(f.name)){let doc=new DOMParser().parseFromString(body,'text/html');doc.querySelectorAll('script,style,iframe,object,embed').forEach(n=>n.remove());body=doc.body.innerText||doc.body.textContent||''} $('templateBody').value=body;if(!$('templateName').value)$('templateName').value=f.name.replace(/\.[^.]+$/,'')};
+function bindSection(){bindGasSync();document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{section=b.dataset.go;editId=null;render()});document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{editId=b.dataset.edit;render();scrollTo(0,0)});document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{await remove(({ 'Data Warga':'residents','Data Keluarga':'families','Kas RT':'cash',Pengumuman:'announcements',Arsip:'archives',Surat:'letters'})[section],b.dataset.del)});if($('cancelEdit'))$('cancelEdit').onclick=()=>{editId=null;render()};if($('entryForm'))$('entryForm').onsubmit=async e=>{e.preventDefault();try{let s=({'Data Warga':'residents','Data Keluarga':'families','Kas RT':'cash',Pengumuman:'announcements',Arsip:'archives'})[section];let fd=new FormData(e.target),obj=state[s].find(x=>x.id===fd.get('id'))||{id:uid()};for(let [k,v] of fd)if(k!=='id'){if(v instanceof File){if(v.size)obj[k]=await fileData(v)}else obj[k]=v}if(s==='cash')obj.amount=num(obj.amount);if(s==='residents'&&obj.nik&&state.residents.some(x=>x.id!==obj.id&&x.nik===obj.nik))throw Error('NIK sudah terdaftar');if(s==='families'&&obj.number&&state.families.some(x=>x.id!==obj.id&&x.number===obj.number))throw Error('Nomor KK sudah terdaftar');await save(s,obj);editId=null}catch(err){alert(err.message)}};if($('settingsForm'))$('settingsForm').onsubmit=async e=>{e.preventDefault();try{let fd=new FormData(e.target),s={...settings()};for(let [k,v] of fd){if(v instanceof File){if(v.size){if(!v.type.startsWith('image/'))throw Error('Logo dan kop harus berupa gambar');s[k]=await fileData(v)}}else s[k]=v}s.showName=e.target.elements.showName.checked;await save('settings',s)}catch(err){alert(err.message)}};if($('backup'))$('backup').onclick=()=>download('rt-smart-backup-'+today()+'.json',new Blob([JSON.stringify({version:3,created:new Date().toISOString(),data:state})],{type:'application/json'}));if($('restore'))$('restore').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;let v=JSON.parse(await f.text());if(!v.data||!STORE.every(s=>Array.isArray(v.data[s])))throw Error('Format backup tidak sesuai');if(!confirm('GANTI semua data lokal dengan backup ini?'))return;for(let s of STORE){await new Promise((res,rej)=>{let t=db.transaction(s,'readwrite');t.objectStore(s).clear();for(let obj of v.data[s])t.objectStore(s).put(obj);t.oncomplete=res;t.onerror=()=>rej(t.error)})}window.rtDriveDirty?.();await refresh();say('Data berhasil dipulihkan')}catch(err){alert('Gagal restore: '+err.message)}};if($('templateFile'))$('templateFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;if(f.size>500000)return alert('File template terlalu besar (maksimal 500 KB)');if(!/\.(txt|html|htm)$/i.test(f.name))return alert('Gunakan file .txt atau .html');let body=await f.text();if(/\.html?$/i.test(f.name)){let doc=new DOMParser().parseFromString(body,'text/html');doc.querySelectorAll('script,style,iframe,object,embed').forEach(n=>n.remove());body=doc.body.innerText||doc.body.textContent||''} $('templateBody').value=body;if(!$('templateName').value)$('templateName').value=f.name.replace(/\.[^.]+$/,'')};
 if($('templateForm'))$('templateForm').onsubmit=async e=>{e.preventDefault();let id=$('templateId').value||uid(),name=$('templateName').value.trim(),body=$('templateBody').value.trim();if(!name||!body)return alert('Nama dan isi template wajib diisi');let st={...settings()},list=[...(st.templates||[])],i=list.findIndex(x=>x.id===id),obj={id,name,body};if(i<0)list.push(obj);else list[i]=obj;st.templates=list;await save('settings',st);say('Template tersimpan di perangkat')};
 if($('templateReset'))$('templateReset').onclick=()=>{$('templateId').value='';$('templateName').value='';$('templateBody').value=DEFAULT_TEMPLATE;$('templateFile').value=''};
 document.querySelectorAll('[data-template-edit]').forEach(b=>b.onclick=()=>{let t=templates().find(x=>x.id===b.dataset.templateEdit);if(!t)return;$('templateId').value=t.id;$('templateName').value=t.name;$('templateBody').value=t.body;$('templateForm').scrollIntoView({behavior:'smooth'})});
 document.querySelectorAll('[data-template-delete]').forEach(b=>b.onclick=async()=>{if(!confirm('Hapus template ini?'))return;let st={...settings()};st.templates=templates().filter(x=>x.id!==b.dataset.templateDelete);await save('settings',st)});
 if($('letterForm'))$('letterForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),s=settings(),name=String(f.get('citizen')||''),w=state.residents.find(x=>x.name.toLowerCase()===name.toLowerCase());let t=templates().find(x=>x.id===f.get('template'));if(!t)return alert('Pilih template surat yang sudah disimpan');let letter={id:uid(),kind:t.name,citizen:name,purpose:f.get('purpose'),date:f.get('date')||today(),templateId:t.id};let vals={nama:name,nik:w?.nik||'........................',alamat:w?.address||'........................',keperluan:letter.purpose,tanggal:letter.date,rt:s.rt||'',rw:s.rw||'',desa:s.village||'',kecamatan:s.district||'',kabupaten:s.city||'',ketua:s.chair||'........................',jenis:letter.kind};let body=fillTemplate(t.body,vals);let paragraphs=body.split(/\n/).map(line=>`<div style="min-height:1.3em">${esc(line)||'&nbsp;'}</div>`).join('');let html=`<!doctype html><html><head><meta charset="utf-8"></head><body style="font-family:'Times New Roman';font-size:12pt;margin:3cm"><div style="text-align:center">${s.letterhead?`<img src="${s.letterhead}" style="width:100%;max-height:130px;object-fit:contain">`:`<b>RT ${esc(s.rt)} / RW ${esc(s.rw)}<br>${esc(s.village||'')} ${esc(s.city||'')}</b><hr>`}</div><h3 style="text-align:center;text-decoration:underline">${esc(letter.kind.toUpperCase())}</h3><div style="line-height:1.5">${paragraphs}</div></body></html>`;await put('letters',letter);window.rtDriveDirty?.();download('surat-'+letter.id+'.doc',new Blob(['\ufeff'+html],{type:'application/msword'}));await refresh()};if($('publish'))$('publish').onclick=publish;if($('activateLicense'))$('activateLicense').onclick=activateLicense;if($('copyPublic'))$('copyPublic').onclick=()=>{navigator.clipboard.writeText(localStorage.getItem('rt-public-link')||'').then(()=>alert('Link warga disalin')).catch(()=>prompt('Salin link warga:',localStorage.getItem('rt-public-link')||''))}}
+
+// RT SMART: koneksi ke Google Apps Script Bridge.
+const RT_GAS_URL = String(window.RT_SMART_APPS_SCRIPT_URL || '').trim();
+let rtGasReady = null;
+let rtGasCounter = 0;
+const rtGasPending = new Map();
+
+function rtGasConnect() {
+  if (!RT_GAS_URL) return Promise.reject(new Error('URL Google Apps Script belum diisi di config.js.'));
+  if (rtGasReady) return rtGasReady;
+  rtGasReady = new Promise((resolve, reject) => {
+    const frame = document.createElement('iframe');
+    frame.style.display = 'none';
+    frame.title = 'RT SMART Sync Bridge';
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new Error('Bridge tidak merespons. Periksa URL Web App dan file Bridge.html.'));
+      }
+    }, 25000);
+    function onMessage(event) {
+      if (event.source !== frame.contentWindow) return;
+      const msg = event.data;
+      if (!msg || typeof msg !== 'object') return;
+      if (msg.type === 'RT_SMART_READY' && !settled) {
+        settled = true;
+        clearTimeout(timeout);
+        resolve(frame);
+      } else if (msg.type === 'RT_SMART_RESPONSE' && msg.id) {
+        const pending = rtGasPending.get(msg.id);
+        if (!pending) return;
+        rtGasPending.delete(msg.id);
+        clearTimeout(pending.timeout);
+        pending.resolve(msg.result);
+      }
+    }
+    window.addEventListener('message', onMessage);
+    frame.src = RT_GAS_URL;
+    document.body.appendChild(frame);
+  });
+  return rtGasReady;
+}
+async function rtGasRequest(payload) {
+  const frame = await rtGasConnect();
+  return new Promise((resolve, reject) => {
+    const id = 'rtgas-' + (++rtGasCounter);
+    const timeout = setTimeout(() => {
+      rtGasPending.delete(id);
+      reject(new Error('Permintaan sinkronisasi melewati batas waktu. Coba lagi.'));
+    }, 35000);
+    rtGasPending.set(id, { resolve, reject, timeout });
+    frame.contentWindow.postMessage({type:'RT_SMART_REQUEST', id, payload}, '*');
+  });
+}
+function rtGasDeviceId() {
+  let id = localStorage.getItem('rt-device-id');
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+    localStorage.setItem('rt-device-id', id);
+  }
+  return id;
+}
+function rtGasCode() {
+  const input = $('gasLicenseCode');
+  const code = String(input ? input.value : localStorage.getItem('rt-gas-license-code') || '').trim().toUpperCase();
+  if (!code) throw new Error('Masukkan kode lisensi terlebih dahulu.');
+  localStorage.setItem('rt-gas-license-code', code);
+  return code;
+}
+function rtGasStatus(message, error=false) {
+  const el = $('gasSyncStatus');
+  if (el) {
+    el.textContent = message;
+    el.style.background = error ? '#fff0f0' : '';
+    el.style.borderColor = error ? '#e7bcbc' : '';
+  }
+}
+async function rtGasCall(payload) {
+  const result = await rtGasRequest(payload);
+  if (!result || result.ok !== true) throw new Error(result && result.message ? result.message : 'Permintaan Apps Script gagal.');
+  return result;
+}
+function rtGasBackupLocal(filename='rt-smart-backup-before-sync-'+today()+'.json') {
+  download(filename, new Blob([JSON.stringify({version:3,created:new Date().toISOString(),data:state})], {type:'application/json'}));
+}
+async function rtGasReplaceLocal(data) {
+  if (!data || !STORE.every(s => Array.isArray(data[s]))) throw new Error('Struktur data online tidak cocok. Data lokal tidak diubah.');
+  for (const s of STORE) {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(s, 'readwrite');
+      const store = tx.objectStore(s);
+      store.clear();
+      for (const item of data[s]) store.put(item);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error || new Error('Gagal menyimpan data lokal.'));
+      tx.onabort = () => reject(tx.error || new Error('Penyimpanan lokal dibatalkan.'));
+    });
+  }
+  await refresh();
+}
+async function rtGasRegister() {
+  try {
+    rtGasStatus('Mendaftarkan perangkat…');
+    const code = rtGasCode();
+    const result = await rtGasCall({action:'register', code, device:rtGasDeviceId()});
+    rtGasStatus('Perangkat terdaftar. Lisensi ini digunakan pada '+result.devices+' dari maksimal 3 perangkat.');
+  } catch (e) { rtGasStatus(e.message, true); }
+}
+async function rtGasPull() {
+  try {
+    const code = rtGasCode();
+    if (!confirm('Ambil data dari server dan ganti data lokal pada perangkat ini? Sebelum mengganti, aplikasi akan mengunduh backup lokal.')) return;
+    rtGasStatus('Mengunduh backup lokal, lalu mengambil data online…');
+    rtGasBackupLocal();
+    const result = await rtGasCall({action:'pull', code, device:rtGasDeviceId()});
+    await rtGasReplaceLocal(result.data);
+    localStorage.setItem('rt-gas-revision-' + code, String(result.revision || 0));
+    rtGasStatus('Berhasil mengambil data online. Revisi server: '+(result.revision || 0)+'. Backup lokal sudah diunduh.');
+  } catch (e) { rtGasStatus(e.message, true); }
+}
+async function rtGasPush() {
+  try {
+    const code = rtGasCode();
+    if (!confirm('Kirim seluruh data lokal ke server? Data online yang ada akan diganti. Pastikan Anda memilih perangkat yang berisi data paling lengkap.')) return;
+    rtGasStatus('Memeriksa revisi server…');
+    const current = await rtGasCall({action:'pull', code, device:rtGasDeviceId()});
+    const result = await rtGasCall({action:'push', code, device:rtGasDeviceId(), revision:current.revision, data:state});
+    localStorage.setItem('rt-gas-revision-' + code, String(result.revision || current.revision + 1));
+    rtGasStatus('Berhasil mengirim data lokal. Revisi server: '+(result.revision || current.revision + 1)+'.');
+  } catch (e) { rtGasStatus(e.message, true); }
+}
+function bindGasSync() {
+  const code = $('gasLicenseCode');
+  if (code) code.value = localStorage.getItem('rt-gas-license-code') || localStorage.getItem('rt-license-code') || '';
+  if ($('gasRegister')) $('gasRegister').onclick = rtGasRegister;
+  if ($('gasPull')) $('gasPull').onclick = rtGasPull;
+  if ($('gasPush')) $('gasPush').onclick = rtGasPush;
+}
+
 const PUBLIC_API=(window.RT_SMART_API||'').replace(/\/$/,'');
 function rtDeviceId(){let id=localStorage.getItem('rt-device-id');if(!id){id=crypto.randomUUID();localStorage.setItem('rt-device-id',id)}return id}
 async function activateLicense(){let el=$('publishStatus'),code=$('licenseCode').value.trim().toUpperCase();if(!PUBLIC_API){el.textContent='Aplikasi belum dikonfigurasi penjual. Hubungi penjual.';return}el.textContent='Memeriksa kode aktivasi...';try{let r=await fetch(PUBLIC_API+'/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,deviceId:rtDeviceId(),deviceName:(navigator.platform||'Perangkat')})});let d=await r.json();if(!r.ok)throw Error(d.error||'Aktivasi gagal');localStorage.setItem('rt-license-code',code);localStorage.setItem('rt-public-link',d.url);render()}catch(e){el.textContent=e.message}}
