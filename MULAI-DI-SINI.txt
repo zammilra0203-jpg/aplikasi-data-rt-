@@ -1,0 +1,24 @@
+RT SMART PREMIUM — VERSI SINKRONISASI 3 PERANGKAT (UJI COBA)
+
+FITUR:
+- Data RT (warga, KK, kas, surat, arsip, pengumuman) tersimpan lokal melalui IndexedDB.
+- Foto asli sampai 20 MB per file disimpan tanpa kompresi; backup JSON mencakup lampiran.
+- Google Drive appDataFolder menjadi penyimpanan online melalui OAuth akun Google RT.
+- Tiga perangkat dapat menambah dan mengedit data berbeda. Perubahan digabungkan berdasarkan ID catatan.
+- Konflik pengeditan catatan yang sama dideteksi dan sinkronisasi dihentikan (tidak menimpa otomatis).
+
+LANGKAH PEMILIK APLIKASI (WAJIB SEBELUM DIPAKAI):
+1. Buat Google Cloud Project dan aktifkan Google Drive API.
+2. Atur OAuth Consent Screen dan Web Client ID; ikuti ketentuan verifikasi Google.
+3. Isi Web Client ID di google-config.js.
+4. Unggah index.html dan berkas pendukung ke hosting HTTPS dengan origin yang diizinkan di OAuth.
+5. Pada ketiga perangkat buka Pengaturan > Hubungkan Google dengan akun RT yang sama.
+6. Jangan memasukkan data sensitif nyata sebelum enkripsi dan kontrol akses disiapkan.
+
+BATASAN KEAMANAN DAN OPERASIONAL:
+- Ini bukan versi produksi. Belum ada enkripsi end-to-end, pengujian multi-perangkat menyeluruh, atau lisensi 3 perangkat yang aman tanpa server.
+- Google Drive appDataFolder tidak mendukung penguncian transaksi; edit simultan pada catatan sama dan race condition masih mungkin. Jika konflik, lakukan backup sebelum penyelesaian manual.
+- Seluruh foto dalam JSON base64 bisa sangat besar. Performa dan kuota Drive/API menjadi kendala; perlu migrasi ke file foto terpisah untuk produksi.
+- GitHub Pages hanya hosting aplikasi, bukan database. Google Drive memakai akun pelanggan, bukan email sebagai tempat penyimpanan.
+- Sistem lisensi 3 perangkat dan dashboard publik membutuhkan backend terpisah yang dikonfigurasi pemilik aplikasi.
+- Kuota gratis Google tidak dijamin tanpa batas atau selamanya.
